@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Budget Tracker</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #f0f2f5;
+      color: #1a1a1a;
+      font-size: 15px;
+    }
+
+    .container { max-width: 880px; margin: 0 auto; padding: 28px 16px 60px; }
+
+    /* Header */
+    header { margin-bottom: 24px; }
+    header h1 { font-size: 1.5rem; font-weight: 700; color: #111; }
+    header p { color: #888; font-size: 0.85rem; margin-top: 3px; }
+
+    /* Card */
+    .card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 22px 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    }
+    .card-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #999;
+      margin-bottom: 18px;
+    }
+
+    /* Alert */
+    .alert {
+      padding: 10px 16px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      font-size: 0.88rem;
+    }
+    .alert-success { background: #e8f5e9; color: #2e7d32; }
+
+    /* Month selector */
+    .month-selector {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .month-selector label { font-size: 0.85rem; color: #777; }
+    .month-selector select {
+      padding: 6px 10px;
+      border: 1.5px solid #ddd;
+      border-radius: 6px;
+      font-size: 0.88rem;
+      background: #fff;
+    }
+    .month-selector button {
+      padding: 6px 18px;
+      background: #1a1a2e;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.88rem;
+      cursor: pointer;
+    }
+    .month-selector button:hover { background: #2e2e50; }
+
+    /* Income */
+    .income-grid { display: flex; gap: 32px; flex-wrap: wrap; }
+    .income-item {}
+    .income-label { font-size: 0.78rem; color: #999; margin-bottom: 3px; }
+    .income-amount { font-size: 1.45rem; font-weight: 700; color: #2e7d32; }
+
+    /* Progress bars */
+    .cat-row { margin-bottom: 14px; }
+    .cat-row:last-child { margin-bottom: 0; }
+    .cat-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 5px;
+    }
+    .cat-name { font-weight: 500; font-size: 0.92rem; }
+    .cat-meta { font-size: 0.8rem; color: #777; }
+    .no-budget-tag { color: #ccc; font-size: 0.75rem; margin-left: 4px; }
+    .bar-track {
+      height: 10px;
+      background: #f0f0f0;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    .bar-fill { height: 100%; border-radius: 5px; min-width: 2px; }
+    .bar-green  { background: #4caf50; }
+    .bar-orange { background: #ff9800; }
+    .bar-red    { background: #f44336; }
+    .bar-gray   { background: #d0d0d0; }
+
+    .no-data { color: #bbb; font-size: 0.88rem; text-align: center; padding: 18px 0; }
+
+    /* Ingest */
+    textarea {
+      width: 100%;
+      min-height: 130px;
+      border: 1.5px solid #ddd;
+      border-radius: 8px;
+      padding: 12px;
+      font-family: monospace;
+      font-size: 0.82rem;
+      resize: vertical;
+      color: #333;
+    }
+    textarea:focus { outline: none; border-color: #1a1a2e; }
+    .btn {
+      padding: 8px 22px;
+      background: #1a1a2e;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.88rem;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    .btn:hover { background: #2e2e50; }
+    .btn-danger { background: #e53935; padding: 4px 10px; font-size: 0.78rem; }
+    .btn-danger:hover { background: #c62828; }
+
+    /* Table */
+    table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+    th {
+      text-align: left;
+      padding: 7px 12px;
+      border-bottom: 2px solid #f2f2f2;
+      color: #aaa;
+      font-weight: 700;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    td { padding: 10px 12px; border-bottom: 1px solid #f7f7f7; }
+    tr:last-child td { border-bottom: none; }
+    .income-row td { color: #2e7d32; }
+
+    /* Budget form */
+    .budget-form-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: flex-end;
+    }
+    .fg { display: flex; flex-direction: column; gap: 4px; }
+    .fg label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #aaa;
+    }
+    .fg input, .fg select {
+      padding: 7px 10px;
+      border: 1.5px solid #ddd;
+      border-radius: 6px;
+      font-size: 0.88rem;
+      background: #fff;
+    }
+    .fg input:focus, .fg select:focus { outline: none; border-color: #1a1a2e; }
+    .fg-cat { min-width: 180px; }
+    .fg-new { min-width: 160px; }
+    .fg-sm  { min-width: 110px; }
+    .fg-xs  { min-width: 90px; }
+
+    .budget-table-wrap { margin-top: 28px; border-top: 1px solid #f2f2f2; padding-top: 20px; }
+
+    /* Divider */
+    .section-divider {
+      display: flex;
+      gap: 16px;
+      align-items: stretch;
+      margin-bottom: 20px;
+    }
+    .section-divider .card { flex: 1; margin-bottom: 0; }
+
+    @media (max-width: 620px) {
+      .section-divider { flex-direction: column; }
+      .section-divider .card { margin-bottom: 12px; }
+      .income-grid { gap: 20px; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1>Budget Tracker</h1>
+    <p>Personal spending — powered by Rocket Money</p>
+  </header>
+
+  <!-- Month/Year Selector -->
+  <div class="card">
+    <form method="get" action="/" class="month-selector">
+      <label>Viewing</label>
+      <select name="month">
+        {% for i in range(1, 13) %}
+        <option value="{{ i }}" {% if i == month %}selected{% endif %}>{{ months[i-1] }}</option>
+        {% endfor %}
+      </select>
+      <select name="year">
+        {% for y in range(today.year - 1, today.year + 2) %}
+        <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit">Go</button>
+    </form>
+  </div>
+
+  <!-- Flash -->
+  {% if added is not none %}
+  <div class="alert alert-success">
+    ✓ Added <strong>{{ added }}</strong> transaction{% if added != '1' %}s{% endif %}.
+    {% if skipped and skipped != '0' %}
+      Skipped <strong>{{ skipped }}</strong> duplicate{% if skipped != '1' %}s{% endif %}.
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- Income Summary -->
+  {% if monthly_income > 0 or yearly_income > 0 %}
+  <div class="card">
+    <div class="card-title">Income</div>
+    <div class="income-grid">
+      <div class="income-item">
+        <div class="income-label">{{ months[month-1] }} {{ year }}</div>
+        <div class="income-amount">{{ monthly_income | currency }}</div>
+      </div>
+      <div class="income-item">
+        <div class="income-label">Full year {{ year }}</div>
+        <div class="income-amount">{{ yearly_income | currency }}</div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Progress Bars: Monthly + Yearly side by side -->
+  <div class="section-divider">
+
+    <!-- Monthly -->
+    <div class="card">
+      <div class="card-title">{{ months[month-1] }} {{ year }} — Monthly</div>
+      {% set has_monthly = namespace(v=false) %}
+      {% for cat in categories %}
+        {% if cat.monthly_spent > 0 or cat.monthly_budget %}
+          {% set has_monthly.v = true %}
+          <div class="cat-row">
+            <div class="cat-header">
+              <span class="cat-name">{{ cat.name }}</span>
+              <span class="cat-meta">
+                {% if cat.monthly_budget %}
+                  {{ cat.monthly_spent | currency }} / {{ cat.monthly_budget | currency }}
+                {% else %}
+                  {{ cat.monthly_spent | currency }}<span class="no-budget-tag">no budget</span>
+                {% endif %}
+              </span>
+            </div>
+            <div class="bar-track">
+              <div class="bar-fill bar-{{ cat.monthly_color }}" style="width: {{ cat.monthly_pct }}%"></div>
+            </div>
+          </div>
+        {% endif %}
+      {% endfor %}
+      {% if not has_monthly.v %}
+        <div class="no-data">No data for this month.</div>
+      {% endif %}
+    </div>
+
+    <!-- Yearly -->
+    <div class="card">
+      <div class="card-title">{{ year }} — Yearly</div>
+      {% set has_yearly = namespace(v=false) %}
+      {% for cat in categories %}
+        {% if cat.yearly_spent > 0 or cat.yearly_budget %}
+          {% set has_yearly.v = true %}
+          <div class="cat-row">
+            <div class="cat-header">
+              <span class="cat-name">{{ cat.name }}</span>
+              <span class="cat-meta">
+                {% if cat.yearly_budget %}
+                  {{ cat.yearly_spent | currency }} / {{ cat.yearly_budget | currency }}
+                {% else %}
+                  {{ cat.yearly_spent | currency }}<span class="no-budget-tag">no budget</span>
+                {% endif %}
+              </span>
+            </div>
+            <div class="bar-track">
+              <div class="bar-fill bar-{{ cat.yearly_color }}" style="width: {{ cat.yearly_pct }}%"></div>
+            </div>
+          </div>
+        {% endif %}
+      {% endfor %}
+      {% if not has_yearly.v %}
+        <div class="no-data">No data for this year.</div>
+      {% endif %}
+    </div>
+
+  </div><!-- /section-divider -->
+
+  <!-- Ingest -->
+  <div class="card">
+    <div class="card-title">Ingest Transactions</div>
+    <form method="post" action="/ingest">
+      <textarea name="raw_text" placeholder="Paste Rocket Money transactions here and hit Save..."></textarea>
+      <button type="submit" class="btn">Parse &amp; Save</button>
+    </form>
+  </div>
+
+  <!-- Last 5 Records -->
+  <div class="card">
+    <div class="card-title">Last 5 Ingested Records</div>
+    {% if recent %}
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Name</th>
+          <th>Category</th>
+          <th style="text-align:right">Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for txn in recent %}
+        <tr class="{{ 'income-row' if txn.is_income else '' }}">
+          <td>{{ txn.date.strftime('%-m/%-d') }}</td>
+          <td>{{ txn.name }}</td>
+          <td>{{ txn.category }}</td>
+          <td style="text-align:right">{{ ('+' if txn.is_income else '') }}{{ txn.amount | currency }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="no-data">No transactions yet — paste some above.</div>
+    {% endif %}
+  </div>
+
+  <!-- Budget Settings -->
+  <div class="card">
+    <div class="card-title">Set Budget</div>
+
+    <form method="post" action="/budgets">
+      <div class="budget-form-row">
+
+        <!-- Category -->
+        <div class="fg fg-cat">
+          <label>Category</label>
+          {% if all_categories %}
+          <select name="category" id="cat-select">
+            {% for cat in all_categories %}
+            <option value="{{ cat }}">{{ cat }}</option>
+            {% endfor %}
+            <option value="__new__">+ New category…</option>
+          </select>
+          {% else %}
+          <input type="text" name="category" placeholder="e.g. Groceries" required />
+          {% endif %}
+        </div>
+
+        <!-- New category input (hidden by default) -->
+        <div class="fg fg-new" id="new-cat-group" style="display:none">
+          <label>New Category Name</label>
+          <input type="text" name="new_category" id="new-cat-input" placeholder="e.g. Groceries" />
+        </div>
+
+        <!-- Period -->
+        <div class="fg fg-sm">
+          <label>Period</label>
+          <select name="period_type" id="period-select">
+            <option value="monthly">Monthly</option>
+            <option value="yearly">Yearly</option>
+          </select>
+        </div>
+
+        <!-- Month (hidden for yearly) -->
+        <div class="fg fg-sm" id="month-group">
+          <label>Month</label>
+          <select name="month">
+            {% for i in range(1, 13) %}
+            <option value="{{ i }}" {% if i == today.month %}selected{% endif %}>{{ months[i-1] }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Year -->
+        <div class="fg fg-xs">
+          <label>Year</label>
+          <select name="year">
+            {% for y in range(today.year - 1, today.year + 2) %}
+            <option value="{{ y }}" {% if y == today.year %}selected{% endif %}>{{ y }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Amount -->
+        <div class="fg fg-sm">
+          <label>Amount ($)</label>
+          <input type="number" name="amount" step="0.01" min="0" placeholder="0.00" required />
+        </div>
+
+        <div>
+          <button type="submit" class="btn" style="margin-top:0">Save</button>
+        </div>
+
+      </div><!-- /budget-form-row -->
+    </form>
+
+    <!-- Existing budgets -->
+    {% if all_budgets %}
+    <div class="budget-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th>Period</th>
+            <th style="text-align:right">Budget</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for b in all_budgets %}
+          <tr>
+            <td>{{ b.category }}</td>
+            <td>
+              {% if b.month %}
+                {{ months_short[b.month - 1] }} {{ b.year }}
+              {% else %}
+                {{ b.year }} <span style="color:#bbb;font-size:0.78rem">(yearly)</span>
+              {% endif %}
+            </td>
+            <td style="text-align:right">{{ b.amount | currency }}</td>
+            <td style="text-align:right">
+              <form method="post" action="/budgets/delete/{{ b.id }}" style="display:inline">
+                <button type="submit" class="btn btn-danger">✕</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
+  </div><!-- /Budget Settings card -->
+
+</div><!-- /container -->
+
+<script>
+  // Toggle new-category input
+  const catSelect = document.getElementById('cat-select');
+  if (catSelect) {
+    const newCatGroup = document.getElementById('new-cat-group');
+    const newCatInput = document.getElementById('new-cat-input');
+    catSelect.addEventListener('change', function () {
+      const isNew = this.value === '__new__';
+      newCatGroup.style.display = isNew ? 'flex' : 'none';
+      newCatInput.required = isNew;
+    });
+  }
+
+  // Toggle month selector for yearly budgets
+  const periodSelect = document.getElementById('period-select');
+  const monthGroup = document.getElementById('month-group');
+  if (periodSelect && monthGroup) {
+    const monthSelect = monthGroup.querySelector('select');
+    periodSelect.addEventListener('change', function () {
+      const isYearly = this.value === 'yearly';
+      monthGroup.style.display = isYearly ? 'none' : 'flex';
+      if (monthSelect) monthSelect.disabled = isYearly;
+    });
+  }
+</script>
+
+</body>
+</html>

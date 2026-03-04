@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: personal-budget
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: personal-budget-db
+          property: connectionString
+
+databases:
+  - name: personal-budget-db
+    databaseName: budget
+    user: budget_user
