@@ -5,6 +5,8 @@ from sqlalchemy import (
     Boolean, Column, Date, DateTime, Float,
     Integer, String, UniqueConstraint, create_engine,
 )
+# UniqueConstraint kept for Budget only; Transaction allows true duplicates
+# (e.g. two MTA swipes same day same amount)
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 from dotenv import load_dotenv
 
@@ -35,9 +37,12 @@ class Transaction(Base):
     is_income = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    __table_args__ = (
-        UniqueConstraint("date", "name", "amount", name="uq_transaction"),
-    )
+
+class HiddenCategory(Base):
+    __tablename__ = "hidden_categories"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False, unique=True)
 
 
 class Budget(Base):

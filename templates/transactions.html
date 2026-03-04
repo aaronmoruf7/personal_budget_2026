@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Transactions</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #f0f2f5;
+      color: #1a1a1a;
+      font-size: 15px;
+    }
+
+    .container { max-width: 960px; margin: 0 auto; padding: 28px 16px 60px; }
+
+    header {
+      display: flex;
+      align-items: baseline;
+      gap: 16px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    header h1 { font-size: 1.5rem; font-weight: 700; color: #111; }
+    header a { font-size: 0.85rem; color: #888; text-decoration: none; }
+    header a:hover { color: #1a1a2e; }
+
+    .card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 20px 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    }
+    .card-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #999;
+      margin-bottom: 16px;
+    }
+
+    .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+    .fg { display: flex; flex-direction: column; gap: 4px; }
+    .fg label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #aaa;
+    }
+    .fg select, .fg input {
+      padding: 7px 10px;
+      border: 1.5px solid #ddd;
+      border-radius: 6px;
+      font-size: 0.88rem;
+      background: #fff;
+    }
+    .fg select { min-width: 150px; }
+    .fg input { min-width: 140px; }
+    .fg select:focus, .fg input:focus { outline: none; border-color: #1a1a2e; }
+
+    .btn {
+      padding: 8px 20px;
+      background: #1a1a2e;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.88rem;
+      cursor: pointer;
+    }
+    .btn:hover { background: #2e2e50; }
+    .btn-ghost {
+      background: transparent;
+      color: #888;
+      border: 1.5px solid #ddd;
+    }
+    .btn-ghost:hover { background: #f5f5f5; color: #333; }
+    .btn-danger { background: #e53935; padding: 4px 10px; font-size: 0.78rem; }
+    .btn-danger:hover { background: #c62828; }
+
+    .summary {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+      font-size: 0.88rem;
+      color: #666;
+      margin-bottom: 16px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid #f2f2f2;
+    }
+    .summary strong { color: #111; font-size: 1rem; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+    th {
+      text-align: left;
+      padding: 8px 12px;
+      border-bottom: 2px solid #f0f0f0;
+      color: #aaa;
+      font-weight: 700;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      white-space: nowrap;
+    }
+    td { padding: 9px 12px; border-bottom: 1px solid #f7f7f7; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafafa; }
+
+    .income-row td { color: #2e7d32; }
+    .cat-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      background: #f0f0f0;
+      color: #555;
+      font-size: 0.75rem;
+      white-space: nowrap;
+    }
+    .amount-cell { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .no-data { color: #bbb; font-size: 0.9rem; text-align: center; padding: 40px 0; }
+
+    .checkbox-row { display: flex; align-items: center; gap: 6px; font-size: 0.88rem; color: #555; padding-bottom: 2px; }
+
+    /* New category input hidden by default */
+    #new-cat-group { display: none; }
+
+    @media (max-width: 600px) {
+      th.hide-mobile, td.hide-mobile { display: none; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1>Transactions</h1>
+    <a href="/">← Back to dashboard</a>
+  </header>
+
+  <!-- Add Transaction -->
+  <div class="card">
+    <div class="card-title">Add Transaction</div>
+    <form method="post" action="/transactions/add">
+      <div class="row">
+
+        <div class="fg">
+          <label>Date</label>
+          <input type="date" name="date" required value="{{ today.isoformat() }}" />
+        </div>
+
+        <div class="fg" style="min-width:200px; flex:1">
+          <label>Name</label>
+          <input type="text" name="name" placeholder="e.g. Trader Joe's" required />
+        </div>
+
+        <div class="fg">
+          <label>Category</label>
+          <select name="category" id="add-cat-select">
+            {% for cat in all_categories %}
+            <option value="{{ cat }}">{{ cat }}</option>
+            {% endfor %}
+            <option value="__new__">+ New category…</option>
+          </select>
+        </div>
+
+        <div class="fg" id="new-cat-group">
+          <label>New Category</label>
+          <input type="text" name="new_category" id="new-cat-input" placeholder="Category name" />
+        </div>
+
+        <div class="fg">
+          <label>Amount ($)</label>
+          <input type="number" name="amount" step="0.01" min="0" placeholder="0.00" required style="min-width:100px" />
+        </div>
+
+        <div class="fg">
+          <label>&nbsp;</label>
+          <div class="checkbox-row">
+            <input type="checkbox" name="is_income" id="is_income" />
+            <label for="is_income" style="text-transform:none; font-size:0.88rem; color:#555; letter-spacing:0">Income?</label>
+          </div>
+        </div>
+
+        <div>
+          <button type="submit" class="btn">Add</button>
+        </div>
+
+      </div>
+    </form>
+  </div>
+
+  <!-- Filters -->
+  <div class="card">
+    <div class="card-title">Filter</div>
+    <form method="get" action="/transactions" class="row">
+
+      <div class="fg">
+        <label>Category</label>
+        <select name="category">
+          <option value="">All categories</option>
+          {% for cat in all_categories %}
+          <option value="{{ cat }}" {% if cat == selected_category %}selected{% endif %}>{{ cat }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="fg">
+        <label>Year</label>
+        <select name="year">
+          <option value="">Any year</option>
+          {% for y in range(today.year - 1, today.year + 2) %}
+          <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="fg">
+        <label>Month</label>
+        <select name="month">
+          <option value="">Any month</option>
+          {% for i in range(1, 13) %}
+          <option value="{{ i }}" {% if i == selected_month %}selected{% endif %}>{{ months[i-1] }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <button type="submit" class="btn">Filter</button>
+      <a href="/transactions"><button type="button" class="btn btn-ghost">Clear</button></a>
+
+    </form>
+  </div>
+
+  <!-- Results -->
+  <div class="card">
+
+    <div class="summary">
+      <span><strong>{{ txns | length }}</strong> transaction{{ 's' if txns | length != 1 else '' }}</span>
+      {% if txns %}
+      <span>Total: <strong>{{ total | currency }}</strong></span>
+      {% if selected_category %}<span>Category: <strong>{{ selected_category }}</strong></span>{% endif %}
+      {% endif %}
+    </div>
+
+    {% if txns %}
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Name</th>
+          <th class="hide-mobile">Category</th>
+          <th style="text-align:right">Amount</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for txn in txns %}
+        <tr class="{{ 'income-row' if txn.is_income else '' }}">
+          <td style="white-space:nowrap">{{ txn.date.strftime('%-m/%-d/%Y') }}</td>
+          <td>{{ txn.name }}</td>
+          <td class="hide-mobile"><span class="cat-badge">{{ txn.category }}</span></td>
+          <td class="amount-cell">{{ '+' if txn.is_income else '' }}{{ txn.amount | currency }}</td>
+          <td style="text-align:right">
+            <form method="post" action="/transactions/delete/{{ txn.id }}" style="display:inline"
+              onsubmit="return confirm('Delete this transaction?')">
+              <button type="submit" class="btn btn-danger">✕</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="no-data">No transactions match your filters.</div>
+    {% endif %}
+
+  </div>
+
+</div>
+
+<script>
+  const addCatSelect = document.getElementById('add-cat-select');
+  const newCatGroup = document.getElementById('new-cat-group');
+  const newCatInput = document.getElementById('new-cat-input');
+  addCatSelect.addEventListener('change', function () {
+    const isNew = this.value === '__new__';
+    newCatGroup.style.display = isNew ? 'flex' : 'none';
+    newCatInput.required = isNew;
+  });
+</script>
+
+</body>
+</html>

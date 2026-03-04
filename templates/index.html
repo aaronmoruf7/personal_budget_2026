@@ -197,9 +197,14 @@
 <body>
 <div class="container">
 
-  <header>
-    <h1>Budget Tracker</h1>
-    <p>Personal spending — powered by Rocket Money</p>
+  <header style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:10px;">
+    <div>
+      <h1>Budget Tracker</h1>
+      <p>Personal spending — powered by Rocket Money</p>
+    </div>
+    <a href="/transactions" style="font-size:0.88rem; color:#1a1a2e; text-decoration:none; font-weight:600;">
+      View all transactions →
+    </a>
   </header>
 
   <!-- Month/Year Selector -->
@@ -417,6 +422,24 @@
 
       </div><!-- /budget-form-row -->
     </form>
+
+    <!-- Delete a whole category -->
+    {% if all_categories %}
+    <div class="budget-table-wrap" style="padding-bottom:0; border-bottom: 1px solid #f2f2f2; margin-bottom:20px;">
+      <form method="post" action="/categories/delete" style="display:flex; align-items:flex-end; gap:10px; flex-wrap:wrap; padding-bottom:20px;">
+        <div class="fg" style="min-width:180px">
+          <label>Delete all budgets for category</label>
+          <select name="category">
+            {% for cat in all_categories %}
+            <option value="{{ cat }}">{{ cat }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn btn-danger" style="padding:7px 16px; font-size:0.85rem"
+          onclick="return confirm('Delete all budget entries for this category?')">Delete Category</button>
+      </form>
+    </div>
+    {% endif %}
 
     <!-- Existing budgets -->
     {% if all_budgets %}
